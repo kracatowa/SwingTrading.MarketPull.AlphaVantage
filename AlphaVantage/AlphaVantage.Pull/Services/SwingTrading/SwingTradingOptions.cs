@@ -1,8 +1,16 @@
 ﻿namespace AlphaVantage.Pull.Services.SwingTrading
 {
-    public class SwingTradingOptions
+    public record SwingTradingOptions
     {
-        public required string ApiUrl { get; set; }
-        public required string Filepath { get; set; }
+        public string ApiUrl { get; init; }
+        public string Filepath { get; init; }
+
+        public SwingTradingOptions() { }
+
+        public SwingTradingOptions(string apiUrl, string filepath)
+        {
+            ApiUrl = apiUrl;
+            Filepath = filepath;
+        }
     }
 }

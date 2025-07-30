@@ -5,7 +5,7 @@ namespace AlphaVantage.Pull.Services.SwingTrading
 {
     public class SwingTradingFileService(ILogger<SwingTradingFileService> logger) : ISwingTradingFileService
     {
-        private static readonly JsonSerializerOptions CachedJsonSerializerOptions = new() { WriteIndented = false };
+        private static readonly JsonSerializerOptions CachedJsonSerializerOptions = new() { WriteIndented = true };
 
         public void WriteJsonToFile<T>(string filename, T data)
         {

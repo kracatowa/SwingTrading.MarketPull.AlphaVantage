@@ -1,11 +1,12 @@
 ﻿using AlphaVantage.Pull.Services.AlphaVantage.Dto;
+using AlphaVantage.Pull.Shared;
 
 namespace AlphaVantage.Pull.Services.SwingTrading.Dto
 {
-    public class TickerInformationsMapper
+    public class TickerUpdateMapper
     {
 
-        public static List<Candle> AlphaVantageToTickerInformations(Dictionary<DateTimeOffset, TimeSeries> alphaVantageCandles)
+        public static TickerUpdate AlphaVantageToTickerInformations(string ticker, IntervalTypes intervalType, Dictionary<DateTimeOffset, TimeSeries> alphaVantageCandles)
         {
             var candles = new List<Candle>();
 
@@ -25,7 +26,12 @@ namespace AlphaVantage.Pull.Services.SwingTrading.Dto
                 candles.Add(candle);
             }
 
-            return candles;
+            var tickerInformation = new TickerUpdate(ticker,
+                Interval: intervalType,
+                [.. candles]
+            );
+
+            return tickerInformation;
         }
     }
 }

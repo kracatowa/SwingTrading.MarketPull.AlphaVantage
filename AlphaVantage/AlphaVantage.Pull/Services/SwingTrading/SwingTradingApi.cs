@@ -1,4 +1,5 @@
-﻿using AlphaVantage.Pull.Shared;
+﻿using AlphaVantage.Pull.Services.SwingTrading.Dto;
+using AlphaVantage.Pull.Shared;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
@@ -11,7 +12,7 @@ namespace AlphaVantage.Pull.Services.SwingTrading
     {
         private readonly SwingTradingOptions swingTradingOptions = options.Value;
 
-        public async Task<IEnumerable<TickerUpdate>> GetTickersNeedingCandleUpdateAsync(IntervalTypes interval)
+        public async Task<IEnumerable<TickerCandleUpdateRequest>> GetTickersNeedingCandleUpdateAsync(IntervalTypes interval)
         {
             logger.LogInformation("Fetching tickers needing candle updates for interval: {Interval}", interval);
 
@@ -21,12 +22,10 @@ namespace AlphaVantage.Pull.Services.SwingTrading
 
             var tickerUpdateJson = await response.Content.ReadAsStringAsync();
 
-            var tickerUpdates = JsonSerializer.Deserialize<IEnumerable<TickerUpdate>>(tickerUpdateJson, jsonSerializerOptions);
+            var tickerUpdates = JsonSerializer.Deserialize<IEnumerable<TickerCandleUpdateRequest>>(tickerUpdateJson, jsonSerializerOptions);
             logger.LogInformation("Deserialized {Count} tickers needing updates.", tickerUpdates?.Count() ?? 0);
 
             return tickerUpdates ?? [];
         }
     }
-
-    public record TickerUpdate(string Ticker, int MissingDays);
 }

@@ -1,108 +1,99 @@
-using AlphaVantage.Pull.Services.AlphaVantage.Apis;
-using AlphaVantage.Pull.Services.AlphaVantage.Apis.Parameters;
+using AlphaVantage.Pull.Services;
 using AlphaVantage.Pull.Services.AlphaVantage;
+using AlphaVantage.Pull.Services.AlphaVantage.Apis;
+using AlphaVantage.Pull.Services.Producer;
 using AlphaVantage.Pull.Services.SwingTrading;
 using AlphaVantage.Pull.Shared;
-using StackExchange.Redis;
-using System.Text.Json;
-using AlphaVantage.Pull.Services.Producer;
-using AlphaVantage.Pull.Services;
-using AlphaVantage.Pull.Services.SwingTrading.Dto;
-using AlphaVantage.Pull.Services.Producer.Dto;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
-using System.Net.NetworkInformation;
+using System.Text.Json;
 
 namespace AlphaVantage.Pull
 {
     public class Program
     {
-        private static readonly JsonSerializerOptions CachedJsonSerializerOptions = new()
-        {
-            PropertyNameCaseInsensitive = true,
-            WriteIndented = true,
-        };
-
         public static async Task Main(string[] args)
         {
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+            var host = CreateHostBuilder(args).Build();
 
-            var builder = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables();
-
-            var configuration = builder.Build();
-
-            var services = new ServiceCollection();
-
-            services.AddHttpClient();
-            services.AddLogging(loggingBuilder =>
-            {
-                loggingBuilder.AddConsole();
-                loggingBuilder.AddDebug();
-            });
+            var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
             if (args.Length == 0 || !Enum.TryParse<IntervalTypes>(args[0], true, out var intervalTypes))
             {
-                Console.WriteLine("Invalid or missing argument for TimeSerieTypes.");
+                logger.LogError("Invalid or missing argument for TimeSerieTypes.");
                 return;
             }
 
-            // Register configuration    
-            services.Configure<AlphaVantageOptions>(configuration.GetSection("AlphaVantage"));
-            services.Configure<SwingTradingOptions>(configuration.GetSection("SwingTrading"));
-            services.Configure<ProducerOptions>(configuration.GetSection("Producer"));
-
-            services.AddSingleton(CachedJsonSerializerOptions);
-            services.AddTransient<HttpErrorHandler>();
-            services.AddTransient<ISwingTradingFileService, SwingTradingFileService>();
-
-            services.AddSingleton<IConnectionMultiplexer>(sp =>
-                ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")));
-
-            // Register SwingTradingApi as ISwingTradingApi with HttpClient
-            services.AddHttpClient<ISwingTradingApi, SwingTradingApi>()
-                .AddHttpMessageHandler<HttpErrorHandler>();
-            services.AddHttpClient<IAlphaVantageApi, AlphaVantageApi>()
-                .AddHttpMessageHandler<HttpErrorHandler>();
-            services.AddHttpClient<IProducerApi, ProducerApi>()
-                .AddHttpMessageHandler<HttpErrorHandler>();
-
-            // Build the service provider    
-            var provider = services.BuildServiceProvider();
-
-            var alphaVantageApi = provider.GetRequiredService<IAlphaVantageApi>();
-            var swingTradingApi = provider.GetRequiredService<ISwingTradingApi>();
-            var producerApi = provider.GetRequiredService<IProducerApi>();
-            var swingTradingFileService = provider.GetRequiredService<ISwingTradingFileService>();
-
+            var tickerProcessor = host.Services.GetRequiredService<TickerProcessor>();
             var cancellationToken = new CancellationToken();
 
             try
             {
-                IEnumerable<TickerUpdate> tickers = await swingTradingApi.GetTickersNeedingCandleUpdateAsync(IntervalTypes.OneDay);
-
-                foreach (var ticker in tickers)
-                {
-                    var timeSeriesType = TimeSeriesIntervalConverter.ConvertIntervalTypeToTimeSeriesType(intervalTypes);
-
-                    var datas = await alphaVantageApi.GetData(ticker.Ticker, timeSeriesType, ticker.MissingDays);
-
-                    var tickerInformationData = TickerInformationsMapper.AlphaVantageToTickerInformations(datas);
-
-                    var swingTradingOptions = provider.GetRequiredService<IOptions<SwingTradingOptions>>().Value;
-                    var filename = $"{swingTradingOptions.Filepath}/output_{ticker.Ticker}_{DateTime.UtcNow.Date:yyyy/MM/dd}";
-
-                    swingTradingFileService.WriteJsonToFile(filename, tickerInformationData);
-
-                    await producerApi.SendProcessFileEventAsync(new ProcessFileEvent(filename), cancellationToken);
-                }
+                await tickerProcessor.ProcessTickersAsync(intervalTypes, cancellationToken);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                logger.LogError(ex, "An error occurred during execution.");
             }
         }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    var environment = context.HostingEnvironment.EnvironmentName;
+
+                    config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                          .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+                          .AddEnvironmentVariables();
+                })
+                .ConfigureServices((context, services) =>
+                {
+                    var configuration = context.Configuration;
+
+                    services.AddHttpClient();
+                    services.AddLogging(loggingBuilder =>
+                    {
+                        loggingBuilder.AddConsole();
+                        loggingBuilder.AddDebug();
+                    });
+
+                    services.Configure<AlphaVantageOptions>(configuration.GetSection("AlphaVantage"));
+                    services.Configure<SwingTradingOptions>(configuration.GetSection("SwingTrading"));
+                    services.Configure<ProducerOptions>(configuration.GetSection("Producer"));
+
+
+                    services.AddSingleton(new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        WriteIndented = true
+                    });
+                    services.AddTransient<HttpErrorHandler>();
+                    services.AddTransient<ISwingTradingFileService, SwingTradingFileService>();
+                    services.AddTransient<TickerProcessor>();
+
+                    services.AddStackExchangeRedisCache(options =>
+                    {
+                        options.Configuration = configuration.GetConnectionString("Redis");
+                        options.InstanceName = "AlphaVantage_";
+                    });
+
+                    services.AddHttpClient<ISwingTradingApi, SwingTradingApi>()
+                        .AddHttpMessageHandler<HttpErrorHandler>();
+                    services.AddHttpClient<IAlphaVantageApi, AlphaVantageApi>()
+                        .AddHttpMessageHandler(sp =>
+                        {
+                            var cache = sp.GetRequiredService<IDistributedCache>();
+                            var alphaVantageOptions = sp.GetRequiredService<IOptions<AlphaVantageOptions>>().Value;
+                            var logger = sp.GetRequiredService<ILogger<RedisCacheHandler>>();
+                            var cacheKey = "AlphaVantage_ApiCallCount";
+                            var dailyCallLimit = alphaVantageOptions.ApiCallCount;
+                            return new RedisCacheHandler(cache, cacheKey, dailyCallLimit, logger);
+                        })
+                        .AddHttpMessageHandler<HttpErrorHandler>();
+                    services.AddHttpClient<IProducerApi, ProducerApi>()
+                        .AddHttpMessageHandler<HttpErrorHandler>();
+                });
     }
 
 }

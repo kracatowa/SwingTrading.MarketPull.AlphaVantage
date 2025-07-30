@@ -1,7 +1,14 @@
 ﻿namespace AlphaVantage.Pull.Services.Producer
 {
-    public class ProducerOptions
+    public record ProducerOptions
     {
-        public string ApiUrl { get; set; }
+        public string ApiUrl { get; init; }
+
+        public ProducerOptions() { }
+
+        public ProducerOptions(string apiUrl)
+        {
+            ApiUrl = apiUrl;
+        }
     }
 }

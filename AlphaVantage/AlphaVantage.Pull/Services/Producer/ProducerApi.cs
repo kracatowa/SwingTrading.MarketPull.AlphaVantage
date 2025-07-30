@@ -13,7 +13,7 @@ namespace AlphaVantage.Pull.Services.Producer
         {
             logger.LogInformation("Starting to send process file event.");
 
-            var url = $"{options.Value.ApiUrl}/process/send";
+            var url = $"{options.Value.ApiUrl}/produce/send";
 
             var jsonProcessFileEvent = JsonSerializer.Serialize(processFileEvent, jsonSerializerOptions);
 
