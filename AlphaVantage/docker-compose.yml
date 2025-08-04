@@ -1,0 +1,37 @@
+services:  
+ alphavantage.marketpull.daily:  
+   image: alphavantage-marketpull-daily:dev  
+   build:  
+     context: /AlphaVantage.MarketPull/.
+     dockerfile: Dockerfile
+   environment:
+      - INTERVAL_TYPE=OneDay
+      - CRON_SCHEDULE=0 18 * * 1-5
+      - TZ=America/New_York
+      - APP_DLL_PATH=/app/AlphaVantage.MarketPull.dll 
+   volumes:  
+     - shared-storage:/app/sharedstorage
+   networks:  
+     - shared-network
+ alphavantage.marketpull.weekly:  
+   image: alphavantage-marketpull-weekly:dev
+   build:  
+     context: /AlphaVantage.MarketPull/.
+     dockerfile: Dockerfile
+   environment:
+      - INTERVAL_TYPE=OneWeek
+      - CRON_SCHEDULE=0 3 * * 1
+      - TZ=America/New_York
+      - APP_DLL_PATH=/app/AlphaVantage.MarketPull.dll 
+   volumes:  
+     - shared-storage:/app/sharedstorage
+   networks:  
+     - shared-network
+
+volumes:
+ shared-storage: 
+    external: true
+
+networks:  
+ shared-network:  
+   external: true

@@ -1,0 +1,15 @@
+services:
+  alphavantage.marketpull.daily:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=LocalDocker
+      - DOTNET_ENVIRONMENT=LocalDocker
+      - INTERVAL_TYPE=OneDay
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+  alphavantage.marketpull.weekly:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=LocalDocker
+      - DOTNET_ENVIRONMENT=LocalDocker
+      - INTERVAL_TYPE=OneDay
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
