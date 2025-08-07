@@ -5,8 +5,6 @@ VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlphaVantage.MarketPull", "AlphaVantage.MarketPull\AlphaVantage.MarketPull.csproj", "{D5FF06B6-5BED-4188-B694-8B18ED84AC95}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{B366EB6F-EA9C-4BBA-A355-CE8260F2780B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{D5FF06B6-5BED-4188-B694-8B18ED84AC95}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5FF06B6-5BED-4188-B694-8B18ED84AC95}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5FF06B6-5BED-4188-B694-8B18ED84AC95}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B366EB6F-EA9C-4BBA-A355-CE8260F2780B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B366EB6F-EA9C-4BBA-A355-CE8260F2780B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B366EB6F-EA9C-4BBA-A355-CE8260F2780B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B366EB6F-EA9C-4BBA-A355-CE8260F2780B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
