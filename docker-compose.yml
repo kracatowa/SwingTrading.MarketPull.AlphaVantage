@@ -1,0 +1,49 @@
+services:
+  alphavantage-marketpull-jobs-daily:
+    image: alphavantage-marketpull-jobs-daily:prod
+    build:
+      context: ./Jobs/
+      dockerfile: Dockerfile
+    environment:
+      - INTERVAL_TYPE=OneDay
+      - CRON_SCHEDULE=0 18 * * 1-5
+      - TZ=America/New_York
+    volumes:
+      - shared-storage:/app/sharedstorage
+    networks:
+      - shared-network
+
+  alphavantage-marketpull-jobs-weekly:
+    image: alphavantage-marketpull-jobs-weekly:prod
+    build:
+      context: ./Jobs/
+      dockerfile: Dockerfile
+    environment:
+      - INTERVAL_TYPE=OneWeek
+      - CRON_SCHEDULE=0 3 * * 1
+      - TZ=America/New_York
+    volumes:
+      - shared-storage:/app/sharedstorage
+    networks:
+      - shared-network
+
+  alphavantage-marketpull-api:
+    image: alphavantage-marketpull-api:prod
+    build:
+      context: ./AlphaVantage.MarketPull/
+      dockerfile: Dockerfile
+    environment:  
+     - ASPNETCORE_HTTP_PORTS=5247
+     - ASPNETCORE_ENVIRONMENT=Production
+    ports:  
+       - "5247:5247"
+    volumes:
+      - shared-storage:/app/sharedstorage
+    networks:
+      - shared-network
+
+volumes:
+  shared-storage:
+
+networks:
+  shared-network:

@@ -3,20 +3,20 @@
     "http": {
       "commandName": "Project",
       "launchBrowser": true,
+      "applicationUrl": "http://localhost:5247",
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "LocalDesktop",
-        "INTERVAL_TYPE": "OneDay"
+        "DOTNET_ENVIRONMENT": "LocalDesktop"
       },
-      "dotnetRunMessages": true
+      "dotnetRunMessages": true,
+      "launchUrl": "http://localhost:5247/swagger"
     },
     "Container (Dockerfile)": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "applicationUrl": "http://localhost:5247",
+      "launchUrl": "{Scheme}://{ServiceHost}:5247/swagger",
       "environmentVariables": {
-        "ASPNETCORE_HTTP_PORTS": "5245",
-        "DOTNET_ENVIRONMENT": "LocalDocker",
-        "INTERVAL_TYPE": "OneDay"
+        "DOTNET_ENVIRONMENT": "LocalDocker"
       }
     }
   },
